@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = ["core", "py"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.85"
+license = "UNLICENSED"
+publish = false
+authors = ["Orderflow Lab"]
+
+[workspace.dependencies]
+orderbook-core = { path = "core" }
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py312"] }
+proptest = "1"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+opt-level = 3
+panic = "abort"
+
+[profile.bench]
+debug = true

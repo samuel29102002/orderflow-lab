@@ -1,0 +1,18 @@
+[package]
+name = "orderbook-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+authors.workspace = true
+description = "Orderflow Lab matching engine (price-time priority CDA)."
+
+[lib]
+# Pure Rust rlib. PyO3 bindings live in the sibling `py/` crate.
+crate-type = ["rlib"]
+
+[dependencies]
+
+[dev-dependencies]
+proptest.workspace = true

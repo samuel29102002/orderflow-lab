@@ -1,0 +1,25 @@
+{
+  "name": "orderflow-lab",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Orderflow Lab — market microstructure simulator and research platform.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.10.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "check-types": "turbo run check-types",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\" --ignore-path .gitignore"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

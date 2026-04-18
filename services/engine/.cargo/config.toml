@@ -1,0 +1,7 @@
+# Fallback SDKROOT for macOS Command Line Tools.
+# Applied only when SDKROOT is not already set in the environment
+# (so a full Xcode install with accepted license will win).
+# Without this, `cc` fails when only Command Line Tools are installed
+# and Xcode's license has not been accepted.
+[env]
+SDKROOT = { value = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk", force = false }

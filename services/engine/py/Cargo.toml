@@ -1,0 +1,17 @@
+[package]
+name = "orderflow-engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+authors.workspace = true
+description = "PyO3 bindings for the Orderflow Lab matching engine."
+
+[lib]
+name = "orderflow_engine"
+crate-type = ["cdylib"]
+
+[dependencies]
+orderbook-core.workspace = true
+pyo3.workspace = true
