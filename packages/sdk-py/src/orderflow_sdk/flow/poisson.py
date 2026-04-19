@@ -36,6 +36,10 @@ class FlowConfig:
     offset_mean: float = 3.0
     qty_mean: float = 10.0
     side_bias: float = 0.5
+    # Fraction of orders that are aggressive (cross the spread).
+    # Aggressive orders are placed on the opposite side of mid, enabling
+    # market-maker fills. 0.15 ≈ realistic tape ratio.
+    market_fraction: float = 0.15
     # ids + seeding
     seed: int = 0
     start_id: int = 1
@@ -98,7 +102,12 @@ class PoissonFlowGenerator(FlowGenerator):
         self._ctx.evolve_mid(dt)
 
         side = Side.Bid if bool(rng.random() < cfg.side_bias) else Side.Ask
-        price = self._ctx.draw_price(side)
+        # Aggressive orders cross the spread (placed above mid for bids,
+        # below mid for asks), enabling market-maker fills.
+        if bool(rng.random() < cfg.market_fraction):
+            price = self._ctx.draw_price(Side.Ask if side == Side.Bid else Side.Bid)
+        else:
+            price = self._ctx.draw_price(side)
         qty = self._ctx.draw_qty()
 
         oid = self._next_id

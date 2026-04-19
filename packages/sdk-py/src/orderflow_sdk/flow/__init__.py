@@ -10,12 +10,14 @@ Three generators are exposed:
 """
 
 from .base import BookState, FlowGenerator, MarketContext, MarketContextConfig
+from .csv_replay import CSVReplayGenerator
 from .hawkes import HawkesConfig, HawkesFlowGenerator
 from .poisson import FlowConfig, PoissonFlowGenerator
 from .queue_reactive import QueueReactiveConfig, QueueReactiveFlowGenerator
 
 __all__ = [
     "BookState",
+    "CSVReplayGenerator",
     "FlowConfig",
     "FlowGenerator",
     "HawkesConfig",

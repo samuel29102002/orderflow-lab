@@ -78,6 +78,8 @@ class HawkesConfig:
     # ids + seeding
     seed: int = 0
     start_id: int = 1
+    # Fraction of orders that are aggressive (cross the spread).
+    market_fraction: float = 0.15
     # Safety bound on the per-event rejection loop.
     max_thinning_attempts: int = 10_000
 
@@ -191,7 +193,11 @@ class HawkesFlowGenerator(FlowGenerator):
 
     def _build_event(self, component: int) -> LimitOrderEvent:
         side = Side.Bid if component == _BID else Side.Ask
-        price = self._ctx.draw_price(side)
+        # Aggressive orders cross the spread, enabling market-maker fills.
+        if bool(self._rng.random() < self.cfg.market_fraction):
+            price = self._ctx.draw_price(Side.Ask if side == Side.Bid else Side.Bid)
+        else:
+            price = self._ctx.draw_price(side)
         qty = self._ctx.draw_qty()
         oid = self._next_id
         self._next_id += 1

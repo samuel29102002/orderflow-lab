@@ -224,6 +224,24 @@ impl OrderBook {
         Ok(CommandOutcome::Modify { canceled_qty, submitted_qty: new_qty, trades })
     }
 
+    /// Modify only the quantity of a resting order, preserving its price.
+    ///
+    /// Priority rules:
+    /// * `new_qty < current qty` — amend in place; order keeps its FIFO position (amend-down).
+    /// * `new_qty > current qty` — cancel and re-insert at back of level (loses priority).
+    /// * `new_qty == 0` — cancel entirely.
+    pub fn modify_order(
+        &mut self,
+        id: OrderId,
+        new_qty: Qty,
+    ) -> Result<CommandOutcome, EngineError> {
+        if new_qty == 0 {
+            return self.cancel(id).map(|qty| CommandOutcome::Cancel { qty });
+        }
+        let loc = *self.index.get(&id).ok_or(EngineError::UnknownOrderId(id))?;
+        self.modify(id, loc.price, new_qty)
+    }
+
     // ------- Matching -------
 
     /// Drain the opposite side at prices that cross `limit_price`, consuming

@@ -32,9 +32,15 @@ from __future__ import annotations
 
 import math
 import statistics
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -183,3 +189,63 @@ async def get_ratios(request: Request, hours: int = 1) -> RatiosResponse:
         )
 
     return RatiosResponse(hours=hours, agents=result)
+
+
+@router.post("/export")
+async def export_parquet(request: Request) -> JSONResponse:
+    """Dump trades and agent_pnl tables to a compressed Parquet file."""
+    sink = getattr(request.app.state, "storage", None)
+    if sink is None:
+        raise HTTPException(status_code=503, detail="storage not available")
+
+    trades_query = "SELECT * FROM trades ORDER BY time"
+    pnl_query = "SELECT * FROM agent_pnl ORDER BY time"
+
+    trades_rows: list[dict[str, Any]] = []
+    pnl_rows: list[dict[str, Any]] = []
+
+    async with sink._pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(trades_query)
+            if cur.description:
+                cols = [d.name for d in cur.description]
+                async for row in cur:
+                    d = dict(zip(cols, row))
+                    if "time" in d and hasattr(d["time"], "isoformat"):
+                        d["time"] = d["time"].isoformat()
+                    trades_rows.append(d)
+
+            await cur.execute(pnl_query)
+            if cur.description:
+                cols = [d.name for d in cur.description]
+                async for row in cur:
+                    d = dict(zip(cols, row))
+                    if "time" in d and hasattr(d["time"], "isoformat"):
+                        d["time"] = d["time"].isoformat()
+                    pnl_rows.append(d)
+
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    out_dir = Path("research/datasets")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"sim_run_{ts}.parquet"
+
+    trades_df = pd.DataFrame(trades_rows)
+    pnl_df = pd.DataFrame(pnl_rows)
+
+    # Tag each table with a source column then stack
+    if not trades_df.empty:
+        trades_df.insert(0, "_table", "trades")
+    if not pnl_df.empty:
+        pnl_df.insert(0, "_table", "agent_pnl")
+
+    combined = pd.concat([trades_df, pnl_df], ignore_index=True, sort=False)
+    pq.write_table(
+        pa.Table.from_pandas(combined, preserve_index=False),
+        str(out_path),
+        compression="snappy",
+    )
+
+    return JSONResponse({
+        "path": str(out_path),
+        "rows": {"trades": len(trades_rows), "agent_pnl": len(pnl_rows)},
+    })

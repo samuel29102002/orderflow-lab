@@ -20,11 +20,14 @@ fills back via :meth:`MarketMakerAgent.on_fill`.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 
 from orderflow_engine import Side
 
 from .deeplob_agent import AgentAction, AgentActionKind
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,6 +170,8 @@ class MarketMakerAgent:
         # Don't cross the book or quote inside the spread.
         if want_bid >= best_ask or want_ask <= best_bid:
             return self._cancel_all()
+
+        log.debug("MM quoting Bid: %d Ask: %d", want_bid, want_ask)
 
         actions: list[AgentAction] = []
         cooldown_ok = t - s.last_refresh_t >= cfg.refresh_cooldown_s

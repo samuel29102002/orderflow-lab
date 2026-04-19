@@ -212,6 +212,23 @@ impl OrderBook {
         }
     }
 
+    fn modify_order(&mut self, id: u64, new_qty: u64) -> PyResult<ModifyOutcome> {
+        let outcome = self.inner.modify_order(id, new_qty).map_err(to_py_err)?;
+        match outcome {
+            core::CommandOutcome::Modify { canceled_qty, submitted_qty, trades } => Ok(ModifyOutcome {
+                canceled_qty,
+                submitted_qty,
+                trades: trades.into_iter().map(Into::into).collect(),
+            }),
+            core::CommandOutcome::Cancel { qty } => Ok(ModifyOutcome {
+                canceled_qty: qty,
+                submitted_qty: 0,
+                trades: vec![],
+            }),
+            _ => unreachable!("modify_order returns Modify or Cancel"),
+        }
+    }
+
     fn best_bid(&self) -> Option<u64> { self.inner.best_bid() }
     fn best_ask(&self) -> Option<u64> { self.inner.best_ask() }
     fn spread(&self) -> Option<u64> { self.inner.spread() }
